@@ -90,16 +90,26 @@ def list_static_mappings():
     return _call("GET", "/services/dhcp_server/static_mappings", params={"parent_id": INTERFACE, "limit": 0})
 
 
+def apply_changes():
+    # Static-mapping writes stage a config change; pfSense won't act on it
+    # (won't hand out/revoke the lease) until this is called.
+    _call("POST", "/services/dhcp_server/apply")
+
+
 def add_static_mapping(mac, ip, descr):
-    return _call("POST", "/services/dhcp_server/static_mapping", json={
+    result = _call("POST", "/services/dhcp_server/static_mapping", json={
         "parent_id": INTERFACE, "mac": mac, "ipaddr": ip, "descr": descr,
     })
+    apply_changes()
+    return result
 
 
 def update_static_mapping(mapping_id, mac, descr):
-    return _call("PATCH", "/services/dhcp_server/static_mapping", json={
+    result = _call("PATCH", "/services/dhcp_server/static_mapping", json={
         "parent_id": INTERFACE, "id": mapping_id, "mac": mac, "descr": descr,
     })
+    apply_changes()
+    return result
 
 
 def delete_static_mappings(ids):
@@ -108,6 +118,7 @@ def delete_static_mappings(ids):
     for mapping_id in sorted(set(ids), reverse=True):
         _call("DELETE", "/services/dhcp_server/static_mapping",
               params={"parent_id": INTERFACE, "id": mapping_id})
+    apply_changes()
 
 
 def range_of(ip):
