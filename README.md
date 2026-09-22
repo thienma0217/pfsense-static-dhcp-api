@@ -2,6 +2,13 @@
 
 Static DHCP assignment on one pfSense interface, without logging into pfSense.
 
+## Prerequisite
+
+Install [pfSense-pkg-RESTAPI](https://github.com/pfrest/pfSense-pkg-RESTAPI) on
+the pfSense box first — this tool talks to pfSense entirely through that API.
+
+Tested with pfSense CE 2.8.1; pfSense Plus not tested.
+
 ## Setup
 
 ```bash
