@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Tạo tài khoản{% endblock %}
+{% block content %}
+<div style="max-width: 360px; margin: 8vh auto 0;">
+  <h1 style="font-size: 24px;">Tạo tài khoản</h1>
+  <p class="muted" style="margin: 4px 0 20px;">Email: <strong>{{ email }}</strong></p>
+
+  <div class="card">
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label>Họ tên
+        <input type="text" name="full_name" required autofocus>
+      </label>
+      <label>Mật khẩu
+        <input type="password" name="password" placeholder="Tối thiểu 8 ký tự" required minlength="8">
+      </label>
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Tạo tài khoản</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

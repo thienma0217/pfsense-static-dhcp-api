@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Static DHCP{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  {% if current_user %}
+  <div class="topnav">
+    <div class="brand"><span class="dot"></span> Static DHCP <span class="badge">V162</span></div>
+    <nav>
+      <a href="{{ url_for('dashboard') }}" {% if request.endpoint=='dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+      <a href="{{ url_for('add_ip') }}" {% if request.endpoint=='add_ip' %}aria-current="page"{% endif %}>Thêm static IP</a>
+      <a href="{{ url_for('revoke_ip') }}" {% if request.endpoint in ['revoke_ip', 'update_ip'] %}aria-current="page"{% endif %}>Thu hồi / Cập nhật</a>
+      <a href="{{ url_for('account') }}" {% if request.endpoint=='account' %}aria-current="page"{% endif %}>Account</a>
+      <a href="{{ url_for('logs') }}" {% if request.endpoint=='logs' %}aria-current="page"{% endif %}>Log</a>
+    </nav>
+    <div class="who">
+      <div class="name">{{ current_user['full_name'] }}</div>
+      <div class="role">{{ current_user['role'] }}</div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="signout">Thoát</a>
+  </div>
+  {% endif %}
+
+  <div class="wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

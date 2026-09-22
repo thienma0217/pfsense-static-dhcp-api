@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Thêm static IP{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Thêm static IP</h1>
+  <p>IP được hệ thống tự chọn từ range còn trống — bạn chỉ cần MAC và tên nhân viên.</p>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <form method="post" id="add-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      <label>Range IP</label>
+      <div class="toggle-group">
+        {% for key, label in ranges.items() %}
+        <input type="radio" name="range_key" id="range_{{ key }}" value="{{ key }}" {% if loop.first %}checked{% endif %}>
+        <label for="range_{{ key }}">{{ label }}</label>
+        {% endfor %}
+      </div>
+
+      <div class="ip-box">
+        <div>
+          <div class="label">IP được cấp tự động</div>
+          <div class="value" id="ip-value">…</div>
+        </div>
+        <button type="button" class="btn" id="reroll-btn">Chọn IP khác</button>
+      </div>
+
+      <label>MAC address *</label>
+      <input type="text" name="mac" id="mac" placeholder="AA:BB:CC:11:22:33" required>
+
+      <div class="field-row">
+        <div>
+          <label>ID nhân viên</label>
+          <input type="text" name="employee_id" id="employee_id" placeholder="NV-10245">
+        </div>
+        <div>
+          <label>Họ tên nhân viên *</label>
+          <input type="text" name="full_name" id="full_name" placeholder="Trần Thị Hồng" required>
+        </div>
+      </div>
+
+      <label>Description ghi lên pfSense</label>
+      <input type="text" id="descr-preview" disabled value="—">
+
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
+        <button type="reset" class="btn">Xoá form</button>
+        <button type="submit" class="btn btn-primary">Tạo static IP</button>
+      </div>
+    </form>
+  </div>
+
+  <div>
+    <div class="card">
+      <h4>Tình trạng range</h4>
+      {% for key, u in usage.items() %}
+      <div class="bar-row">
+        <div class="meta"><span>{{ u.label }} · {{ u.cidr }}</span><span class="muted">{{ u.used }}/{{ u.total }}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width: {{ u.pct }}%;"></div></div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="card">
+      <h4>Lưu ý</h4>
+      <ul style="margin:0; padding-left:18px; color:var(--color-muted); font-size:13px; line-height:1.8;">
+        <li>Chỉ áp dụng cho interface <strong>V162</strong> của pfSense.</li>
+        <li>Mỗi MAC chỉ được gán một IP tĩnh duy nhất.</li>
+        <li>ID và họ tên sẽ ghi vào Description dạng {ID} - {Họ tên}.</li>
+        <li>Mọi thao tác đều được ghi log kèm người thực hiện.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const rangeInputs = document.querySelectorAll('input[name="range_key"]');
+  const ipValue = document.getElementById('ip-value');
+  const rerollBtn = document.getElementById('reroll-btn');
+  const employeeId = document.getElementById('employee_id');
+  const fullName = document.getElementById('full_name');
+  const descrPreview = document.getElementById('descr-preview');
+  let shown = [];
+
+  function currentRange() {
+    return document.querySelector('input[name="range_key"]:checked').value;
+  }
+
+  async function fetchIp(reroll) {
+    if (!reroll) shown = [];
+    ipValue.textContent = '…';
+    const params = new URLSearchParams({ range_key: currentRange(), exclude: shown.join(',') });
+    const res = await fetch(`{{ url_for('next_ip_preview') }}?${params}`);
+    const data = await res.json();
+    if (data.ip) {
+      shown.push(data.ip);
+      ipValue.textContent = data.ip;
+    } else {
+      ipValue.textContent = 'Hết IP trống';
+    }
+  }
+
+  function updatePreview() {
+    const id = employeeId.value.trim();
+    const name = fullName.value.trim();
+    descrPreview.value = name ? (id ? `${id} - ${name}` : name) : '—';
+  }
+
+  rangeInputs.forEach(el => el.addEventListener('change', () => fetchIp(false)));
+  rerollBtn.addEventListener('click', () => fetchIp(true));
+  employeeId.addEventListener('input', updatePreview);
+  fullName.addEventListener('input', updatePreview);
+
+  fetchIp(false);
+})();
+</script>
+{% endblock %}

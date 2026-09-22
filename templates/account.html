@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Account</h1>
+  <p>Quản lý user operator và thông tin của chính bạn.</p>
+</div>
+
+{% if current_user['role'] == 'admin' %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <h4 style="margin:0;">Quản lý user <span class="pill">{{ (users|length) + (invites|length) }} tài khoản</span></h4>
+    <form method="post" action="{{ url_for('invite_user') }}" style="display:flex; gap:8px; margin:0;">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="email" name="email" placeholder="email@example.com" required style="margin:0; width:220px;">
+      <button type="submit" class="btn btn-primary">Gửi lời mời</button>
+    </form>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Email</th><th>Họ tên</th><th>Role</th><th>Trạng thái</th><th>Thao tác</th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u['email'] }}</td>
+        <td>{{ u['full_name'] or '—' }}</td>
+        <td><span class="pill {{ 'pill-accent' if u['role'] == 'admin' else '' }}">{{ u['role'] }}</span></td>
+        <td><span class="pill pill-ok">Hoạt động</span></td>
+        <td>
+          {% if u['role'] != 'admin' %}
+          <form method="post" action="{{ url_for('reset_password', user_id=u['id']) }}" style="display:inline; margin:0;">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-link" onclick="return confirm('Reset mật khẩu cho {{ u['email'] }}?');">Reset password</button>
+          </form>
+          <form method="post" action="{{ url_for('delete_user', user_id=u['id']) }}" style="display:inline; margin:0;">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-link danger" onclick="return confirm('Xoá tài khoản {{ u['email'] }}?');">Xoá</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      {% for inv in invites %}
+      <tr>
+        <td>{{ inv['email'] }}</td>
+        <td class="muted">—</td>
+        <td><span class="pill">operator</span></td>
+        <td><span class="pill pill-update">Chờ nhận lời mời</span></td>
+        <td>
+          <form method="post" action="{{ url_for('cancel_invite', token=inv['token']) }}" style="display:inline; margin:0;">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-link danger" onclick="return confirm('Huỷ lời mời tới {{ inv['email'] }}?');">Huỷ lời mời</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="grid grid-2">
+  <div class="card">
+    <h4>Thông tin của tôi</h4>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="update_profile">
+      <label>Email</label>
+      <input type="email" value="{{ current_user['email'] }}" disabled>
+      <label>Họ tên</label>
+      <input type="text" name="full_name" value="{{ current_user['full_name'] }}" required>
+      <button type="submit" class="btn btn-primary">Lưu</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h4>Đổi mật khẩu của tôi</h4>
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="change_password">
+      <label>Mật khẩu hiện tại</label>
+      <input type="password" name="current_password" required>
+      <label>Mật khẩu mới</label>
+      <input type="password" name="new_password" placeholder="Tối thiểu 8 ký tự" required minlength="8">
+      <button type="submit" class="btn btn-primary">Cập nhật mật khẩu</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

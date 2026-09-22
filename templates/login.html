@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập{% endblock %}
+{% block content %}
+<div style="max-width: 360px; margin: 8vh auto 0;">
+  <div class="brand" style="margin-bottom: 14px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted);">
+    <span class="dot"></span> IT Infrastructure
+  </div>
+  <h1 style="font-size: 26px;">Static DHCP</h1>
+  <p class="muted" style="margin: 4px 0 20px;">Cấp phát IP tĩnh trên interface V162 — pfSense</p>
+
+  <div class="card">
+    <form method="post">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label>Email công ty
+        <input type="email" name="email" placeholder="ten.ban@example.com" required autofocus>
+      </label>
+      <label>Mật khẩu
+        <input type="password" name="password" required>
+      </label>
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Đăng nhập</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

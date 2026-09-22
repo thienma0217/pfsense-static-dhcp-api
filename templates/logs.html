@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Log{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Log &amp; Audit</h1>
+  <p>Mọi thao tác tạo / sửa / thu hồi static IP, mọi user đều xem được.</p>
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
+  <div class="segmented">
+    <a href="{{ url_for('logs', q=query) }}" class="{{ 'active' if not action_filter }}">Tất cả</a>
+    <a href="{{ url_for('logs', q=query, action='add_static_ip') }}" class="{{ 'active' if action_filter == 'add_static_ip' }}">Tạo</a>
+    <a href="{{ url_for('logs', q=query, action='update_static_ip') }}" class="{{ 'active' if action_filter == 'update_static_ip' }}">Sửa</a>
+    <a href="{{ url_for('logs', q=query, action='revoke_static_ip') }}" class="{{ 'active' if action_filter == 'revoke_static_ip' }}">Thu hồi</a>
+  </div>
+  <form method="get" style="display:flex; gap:8px; margin:0;">
+    <input type="hidden" name="action" value="{{ action_filter }}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Tìm theo IP, user, nội dung..." style="margin:0; width:260px;">
+    <button type="submit" class="btn">Tìm</button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr><th>Thời gian</th><th>Hành động</th><th>Người thực hiện</th><th>Chi tiết</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      {% set meta = action_meta(r['action']) %}
+      <tr>
+        <td class="muted">{{ r['ts'] }}</td>
+        <td><span class="pill {{ meta[1] }}">{{ meta[0] }}</span></td>
+        <td>{{ r['actor'] }}</td>
+        <td>{{ r['details'] }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">Không có log.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted" style="margin-top:12px;">Hiển thị tối đa 500 bản ghi gần nhất.</p>
+{% endblock %}

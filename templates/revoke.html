@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Thu hồi / Cập nhật static IP{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Thu hồi / Cập nhật static IP</h1>
+  <p>Tìm theo IP, MAC address, ID hoặc họ tên nhân viên.</p>
+</div>
+
+<form method="get" class="search-row">
+  <input type="text" name="q" value="{{ query }}" placeholder="Tìm IP, MAC, ID, họ tên...">
+  <button type="submit" class="btn">Tìm</button>
+  <a href="{{ url_for('add_ip') }}" class="btn btn-primary">Cấp IP mới</a>
+</form>
+
+{% if error %}
+  <div class="flash flash-error">Không lấy được dữ liệu từ pfSense: {{ error }}</div>
+{% else %}
+<form id="revoke-form" method="post" action="{{ url_for('revoke_ip', q=query) }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+</form>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24px;"></th>
+        <th>IP address</th>
+        <th>MAC address</th>
+        <th>Range</th>
+        <th>Trạng thái</th>
+        <th>ID nhân viên</th>
+        <th>Họ tên</th>
+        <th>Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td><input type="checkbox" name="mapping_id" value="{{ r.id }}" form="revoke-form"></td>
+        <td>{{ r.ip }}</td>
+        <td>{{ r.mac }}</td>
+        <td><span class="pill pill-accent">{{ r.range_label }}</span></td>
+        <td>
+          {% if r.online %}
+          <span class="pill pill-ok">Online</span>
+          {% else %}
+          <span class="pill pill-revoke">Offline</span>
+          {% endif %}
+        </td>
+        <td>{{ r.employee_id or '—' }}</td>
+        <td>{{ r.full_name }}</td>
+        <td>
+          <button type="button" class="btn-link" onclick="document.getElementById('edit-{{ r.id }}').showModal()">Sửa</button>
+          <button type="button" class="btn-link danger" onclick="document.getElementById('revoke-{{ r.id }}').showModal()">Thu hồi</button>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8">Không tìm thấy kết quả.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if rows %}
+<div style="margin-top:16px;">
+  <button type="button" class="btn btn-danger" onclick="document.getElementById('bulk-confirm').showModal()">Thu hồi đã chọn</button>
+</div>
+{% endif %}
+
+<!-- per-row edit dialogs -->
+{% for r in rows %}
+<dialog id="edit-{{ r.id }}">
+  <h3>Cập nhật thông tin</h3>
+  <p class="muted">{{ r.ip }} · <span class="pill pill-accent">{{ r.range_label }}</span></p>
+  <form method="post" action="{{ url_for('update_ip', mapping_id=r.id) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="q" value="{{ query }}">
+    <label>MAC address</label>
+    <input type="text" name="mac" value="{{ r.mac }}" required>
+    <div class="field-row">
+      <div>
+        <label>ID nhân viên</label>
+        <input type="text" name="employee_id" value="{{ r.employee_id }}">
+      </div>
+      <div>
+        <label>Họ tên nhân viên</label>
+        <input type="text" name="full_name" value="{{ r.full_name }}" required>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn" onclick="document.getElementById('edit-{{ r.id }}').close()">Huỷ</button>
+      <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="revoke-{{ r.id }}">
+  <h3>Xác nhận thu hồi</h3>
+  <p>Thu hồi static IP dưới đây khỏi interface V162?</p>
+  <p style="font-weight:600;">{{ r.ip }} <span class="muted" style="font-weight:400;">{{ r.full_name }}</span></p>
+  <p class="muted" style="font-size:12px;">IP sẽ được trả lại pool và có thể cấp cho nhân viên khác. Thao tác được ghi log.</p>
+  <div class="dialog-actions">
+    <button type="button" class="btn" onclick="document.getElementById('revoke-{{ r.id }}').close()">Huỷ</button>
+    <form method="post" action="{{ url_for('revoke_ip', q=query) }}" style="margin:0;">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="mapping_id" value="{{ r.id }}">
+      <button type="submit" class="btn btn-danger">Thu hồi</button>
+    </form>
+  </div>
+</dialog>
+{% endfor %}
+
+<dialog id="bulk-confirm">
+  <h3>Xác nhận thu hồi</h3>
+  <p>Thu hồi toàn bộ static IP đã chọn khỏi interface V162? Thao tác được ghi log.</p>
+  <div class="dialog-actions">
+    <button type="button" class="btn" onclick="document.getElementById('bulk-confirm').close()">Huỷ</button>
+    <button type="submit" form="revoke-form" class="btn btn-danger">Thu hồi</button>
+  </div>
+</dialog>
+{% endif %}
+{% endblock %}
